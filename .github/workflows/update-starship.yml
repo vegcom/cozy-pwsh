@@ -1,6 +1,7 @@
 name: Update starship config
 
 on:
+  workflow_dispatch:
   repository_dispatch:
     types: [update]
 
