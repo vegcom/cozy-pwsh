@@ -1,0 +1,33 @@
+name: Update starship config
+
+on:
+  repository_dispatch:
+    types: [update]
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download starship.toml
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/vegcom/Starship-Twilite/main/starship.toml -o starship.toml
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet starship.toml; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add starship.toml
+          git commit -m "chore: sync starship.toml from Starship-Twilite"
+          git push
