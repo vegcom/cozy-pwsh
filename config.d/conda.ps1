@@ -3,42 +3,51 @@
 # conda config --set changeps1 False
 # starship config conda.ignore_base false
 
-
-# Candidate conda executables to check (expand $HOME for user installs)
-$candidatePaths = @(
+# Candidate conda executables
+$candidateExe = @(
     'C:\opt\miniforge3\Scripts\conda.exe'
     (Join-Path $HOME 'miniforge3\Scripts\conda.exe')
 )
 
-$found = @()
-foreach ($p in $candidatePaths) {
-    if (Test-Path $p) { $found += (Get-Item -LiteralPath $p).FullName }
-}
+# Candidate conda.bat paths
+$candidateBat = @(
+    'C:\opt\miniforge3\Library\bin\conda.bat'
+    (Join-Path $HOME 'miniforge3\Library\bin\conda.bat')
+)
 
-if ($found.Count -eq 0) {
-    if (Get-Command logging -ErrorAction SilentlyContinue) {
-        logging "No conda executable found in candidate paths: $($candidatePaths -join '; ')" "WARN"
-    } else {
-        Write-Host "WARN: No conda executable found in candidate paths: $($candidatePaths -join '; ')"
-    }
+# Find conda.exe
+$exe = Find-FirstExisting $candidateExe
+
+if (-not $exe) {
+    Log "No conda executable found in: $($candidateExe -join '; ')" "WARN"
     return
 }
 
-if ($found.Count -gt 1) {
-    if (Get-Command logging -ErrorAction SilentlyContinue) {
-        logging "Multiple conda executables found: $($found -join ', ') - using first: $($found[0])" "WARN"
-    } else {
-        Write-Host "WARN: Multiple conda executables found: $($found -join ', ') - using first: $($found[0])"
-    }
-}
-
-$env:CONDA_EXE = $found[0]
+$env:CONDA_EXE = $exe
+Log "Using conda executable: $exe" "DEBUG"
 
 # Initialize conda for PowerShell
 try {
     $hook = (& $env:CONDA_EXE shell.powershell hook) | Out-String
     if ($hook) { Invoke-Expression $hook }
-    if (Get-Command logging -ErrorAction SilentlyContinue) { logging "Initialized conda from $env:CONDA_EXE" "DEBUG" }
+    Log "Initialized conda from $env:CONDA_EXE" "DEBUG"
 } catch {
-    if (Get-Command logging -ErrorAction SilentlyContinue) { logging "Failed to initialize conda from $env:CONDA_EXE - $_" "ERROR" } else { Write-Host "ERROR: Failed to initialize conda from $env:CONDA_EXE - $_" }
+    Log "Failed to initialize conda from $env:CONDA_EXE - $_" "ERROR"
+}
+
+# Find conda.bat
+$bat = Find-FirstExisting $candidateBat
+
+if ($bat) {
+    $env:CONDA_BAT = $bat
+    Log "Found conda.bat at $bat" "DEBUG"
+
+    try {
+        & $bat > $null
+        Log "Sourced conda.bat from $bat" "DEBUG"
+    } catch {
+        Log "Failed to source conda.bat from $bat - $_" "ERROR"
+    }
+} else {
+    Log "No conda.bat found in candidate paths" "WARN"
 }
