@@ -2,6 +2,7 @@
 if (-not (Get-Command starship -ErrorAction SilentlyContinue)) {
     logging "starship not found, installing with winget..." "INFO"
     try {
+        # TODO: may swap to try choco THEN try winget
         winget install starship --silent --accept-source-agreements --accept-package-agreements | Out-Null
         # Refresh PATH
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
