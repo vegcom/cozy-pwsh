@@ -3,6 +3,22 @@
 # conda config --set changeps1 False
 # starship config conda.ignore_base false
 
+function Find-CozyPath {
+    param(
+        [Parameter(Mandatory)]
+        [string[]] $Candidates
+    )
+
+    foreach ($path in $Candidates) {
+        if (Test-Path $path) {
+            return $path
+        }
+    }
+
+    return $null
+}
+
+
 # Candidate conda executables
 $candidateExe = @(
     'C:\opt\miniforge3\Scripts\conda.exe'
@@ -16,7 +32,7 @@ $candidateBat = @(
 )
 
 # Find conda.exe
-$exe = Find-FirstExisting $candidateExe
+$exe = Find-CozyPath $candidateExe
 
 if (-not $exe) {
     logging "No conda executable found in: $($candidateExe -join '; ')" "WARN"
@@ -36,7 +52,7 @@ try {
 }
 
 # Find conda.bat
-$bat = Find-FirstExisting $candidateBat
+$bat = Find-CozyPath $candidateBat
 
 if ($bat) {
     $env:CONDA_BAT = $bat
@@ -51,4 +67,5 @@ if ($bat) {
 } else {
     logging "No conda.bat found in candidate paths" "WARN"
 }
+
 
