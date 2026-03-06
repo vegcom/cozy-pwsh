@@ -1,71 +1,31 @@
-# Conda initialize
-
-# conda config --set changeps1 False
-# starship config conda.ignore_base false
-
-function Find-CozyPath {
-    param(
-        [Parameter(Mandatory)]
-        [string[]] $Candidates
-    )
-
-    foreach ($path in $Candidates) {
-        if (Test-Path $path) {
-            return $path
-        }
-    }
-
-    return $null
-}
-
+# Conda initialize (modern Miniforge)
 
 # Candidate conda executables
-$candidateExe = @(
+$candidates = @(
     'C:\opt\miniforge3\Scripts\conda.exe'
     (Join-Path $HOME 'miniforge3\Scripts\conda.exe')
 )
 
-# Candidate conda.bat paths
-$candidateBat = @(
-    'C:\opt\miniforge3\Library\bin\conda.bat'
-    (Join-Path $HOME 'miniforge3\Library\bin\conda.bat')
-)
-
-# Find conda.exe
-$exe = Find-CozyPath $candidateExe
+# Pick the first existing path
+$exe = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 
 if (-not $exe) {
-    logging "No conda executable found in: $($candidateExe -join '; ')" "WARN"
+    logging "No conda executable found in: $($candidates -join '; ')" "WARN"
     return
 }
 
 $env:CONDA_EXE = $exe
 logging "Using conda executable: $exe" "DEBUG"
 
-# Initialize conda for PowerShell
+# Modern hook
 try {
-    $hook = (& $env:CONDA_EXE shell.powershell hook) | Out-String
-    if ($hook) { Invoke-Expression $hook }
-    logging "Initialized conda from $env:CONDA_EXE" "DEBUG"
-} catch {
-    logging "Failed to initialize conda from $env:CONDA_EXE - $_" "ERROR"
-}
-
-# Find conda.bat
-$bat = Find-CozyPath $candidateBat
-
-if ($bat) {
-    $env:CONDA_BAT = $bat
-    logging "Found conda.bat at $bat" "DEBUG"
-
-    try {
-        & $bat > $null
-        logging "Sourced conda.bat from $bat" "DEBUG"
-    } catch {
-        logging "Failed to source conda.bat from $bat - $_" "ERROR"
+    $hook = (& $exe shell.powershell hook) | Out-String
+    if ($hook) {
+        Invoke-Expression $hook
+        logging "Initialized conda via modern hook" "DEBUG"
+    } else {
+        logging "Conda hook returned empty output" "WARN"
     }
-} else {
-    logging "No conda.bat found in candidate paths" "WARN"
+} catch {
+    logging "Failed to initialize conda from $exe - $_" "ERROR"
 }
-
-
