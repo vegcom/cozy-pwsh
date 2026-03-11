@@ -6,6 +6,7 @@ function logging {
         [Parameter(Position=1)]
         [string]$level = "DEBUG"
     )
+    $level = $level.ToUpper()
     $glyphs = @{
         "DEBUG" = "🐛";
         "INFO"  = "✅";
@@ -43,7 +44,7 @@ function logging {
         } else { 1 }
 
         # Only print if message level >= current threshold
-        if ($logLevels[$level] -gt $currentLevel) {
+        if ($logLevels[$level] -ge $currentLevel) {
             Write-Host ($return -join '  ')
         }
     }

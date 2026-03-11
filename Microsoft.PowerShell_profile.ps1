@@ -17,6 +17,17 @@ $conda = Join-Path (Split-Path -Parent $PROFILE.AllUsersCurrentHost) 'config.d' 
 $inshellisense = Join-Path (Split-Path -Parent $PROFILE.AllUsersCurrentHost) '.inshellisense' 'pwsh' 'init.ps1'
 $starship = Join-Path (Split-Path -Parent $PROFILE.AllUsersCurrentHost) 'config.d' 'starship.ps1'
 
+# 🛠️ environment defaults:
+$env:PWSH_LOG_LEVEL = "DEBUG"
+$env:PWSH_TIMESTAMPS = $true
+$env:PWSH_GLYPH = $true
+$env:ENABLE_MODULES = $true
+$env:ENABLE_CHOCOLATEY = $true
+$env:ENABLE_NPM = $true
+$env:ENABLE_INSHELLISENSE = $true
+$env:ENABLE_CONDA = $true
+$env:ENABLE_STARSHIP = $true
+$env:ENABLE_CODE = $false
 
 # ⚠️ required imports (order matters - time must load first):
 . $time
@@ -30,18 +41,6 @@ $starship = Join-Path (Split-Path -Parent $PROFILE.AllUsersCurrentHost) 'config.
 $isInteractive = ($Host.UI.RawUI -ne $null) -or $false
 $isVscode = ($env:TERM_PROGRAM -eq "vscode") -or $false
 $opt_scripts = @()
-
-# 🛠️ environment defaults:
-$env:PWSH_LOG_LEVEL = "DEBUG"
-$env:PWSH_TIMESTAMPS = $true
-$env:PWSH_GLYPH = $true
-$env:ENABLE_MODULES = $true
-$env:ENABLE_CHOCOLATEY = $true
-$env:ENABLE_NPM = $true
-$env:ENABLE_INSHELLISENSE = $true
-$env:ENABLE_CONDA = $true
-$env:ENABLE_STARSHIP = $true
-$env:ENABLE_CODE = $false
 
 # Starship config path
 $starshipConfigPath = Join-Path (Split-Path -Parent $PROFILE.AllUsersCurrentHost) 'starship.toml'
