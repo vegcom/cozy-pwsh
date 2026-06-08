@@ -28,7 +28,7 @@ $env:ENABLE_INSHELLISENSE = $true
 $env:ENABLE_CONDA = $true
 $env:ENABLE_STARSHIP = $true
 $env:ENABLE_CODE = $true
-$env:WARN_THRESHOLD_MS = 150
+$env:PWSH_WARN_THRESHOLD_MS = 150
 
 # ⚠️ required imports (order matters - time must load first):
 . $time
