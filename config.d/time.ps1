@@ -37,9 +37,13 @@ function Show-Elapsed {
         $timerCol = "⏲️"
         $msCol = ([math]::Round($elapsed.TotalMilliseconds, 2).ToString() + " ms").PadLeft(12)
 
-        if ($env:PWSH_LOG_LEVEL -and $env:PWSH_LOG_LEVEL -ne "DEBUG") {
+        if ($env:PWSH_LOG_LEVEL -and $env:WARN_THRESHOLD_MS) {
             if (Get-Command logging -ErrorAction SilentlyContinue) {
-                logging "$nameCol $timerCol $msCol" "INFO"
+                if ($elapsed.TotalMilliseconds -lt $env:WARN_THRESHOLD_MS) {
+                    logging "$nameCol $timerCol $msCol" "INFO"
+                } else {
+                    logging "$nameCol $timerCol $msCol" "WARN"
+                }
             } else {
                 Write-Host "$nameCol $timerCol $msCol"
             }
