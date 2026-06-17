@@ -1,120 +1,95 @@
-# VS Code
-$candidatePaths = @(
-    (Join-Path $env:PROGRAMFILES "Microsoft VS Code/Code.exe"),
-    (Join-Path $env:LOCALAPPDATA "Programs\Microsoft VS Code/Code.exe")
-)
+# Helper function to find and configure VS Code executables
+# Single Responsibility: finds executable, sets env var, optionally runs version command
+function Find-CodeExecutable {
+    param(
+        [string]$Name,
+        [string]$EnvVarName,
+        [string[]]$CandidatePaths,
+        [scriptblock]$VersionCommand,
+        [string]$VersionLabel,
+        [scriptblock]$VersionPath
+    )
 
-$found = @()
-foreach ($p in $candidatePaths) {
-    if (Test-Path $p) { $found += (Get-Item -LiteralPath $p).FullName }
-}
-
-if ($found.Count -eq 0) {
-    if (Get-Command logging -ErrorAction SilentlyContinue) {
-        logging "No VS Code executable found" "DEBUG"
+    # Search for executable in candidate paths
+    $found = @()
+    foreach ($p in $CandidatePaths) {
+        if (Test-Path $p) {
+            $found += (Get-Item -LiteralPath $p).FullName
+        }
     }
-    return
-}
 
-if ($found.Count -gt 1) {
-    if (Get-Command logging -ErrorAction SilentlyContinue) {
-        logging "Multiple VS Code executables found - using first: $($found[0])" "WARN"
+    # Handle not found
+    if ($found.Count -eq 0) {
+        if (Get-Command logging -ErrorAction SilentlyContinue) {
+            logging "No $Name executable found" "DEBUG"
+        }
+        return
     }
-}
 
-$env:CODE_EXE = $found[0]
-
-# VS Code Insiders
-$candidatePathsInsiders = @(
-    (Join-Path $env:PROGRAMFILES "Microsoft VS Code Insiders/Code - Insiders.exe"),
-    (Join-Path $env:LOCALAPPDATA "Programs\Microsoft VS Code Insiders/Code - Insiders.exe")
-)
-
-$foundInsiders = @()
-foreach ($p in $candidatePathsInsiders) {
-    if (Test-Path $p) { $foundInsiders += (Get-Item -LiteralPath $p).FullName }
-}
-
-if ($foundInsiders.Count -eq 0) {
-    if (Get-Command logging -ErrorAction SilentlyContinue) {
-        logging "VS Code Insiders not found" "DEBUG"
+    # Handle multiple found (use first)
+    if ($found.Count -gt 1) {
+        if (Get-Command logging -ErrorAction SilentlyContinue) {
+            logging "Multiple $Name executables found - using first: $($found[0])" "WARN"
+        }
     }
-    return
-}
 
-if ($foundInsiders.Count -gt 1) {
-    if (Get-Command logging -ErrorAction SilentlyContinue) {
-        logging "Multiple VS Code Insiders executables found - using first: $($foundInsiders[0])" "WARN"
-    }
-}
+    # Set environment variable
+    Set-Item -Path "env:$EnvVarName" -Value $found[0]
 
-$env:CODE_INSIDERS_EXE = $foundInsiders[0]
-
-# VS Code CLI
-$candidatePathsCmd = @(
-    (Join-Path $env:PROGRAMFILES "WinGet/Links/code.exe"),
-    (Join-Path $env:LOCALAPPDATA "Microsoft/WinGet/Links/code.exe")
-)
-
-$foundCmd = @()
-foreach ($p in $candidatePathsCmd) {
-    if (Test-Path $p) { $foundCmd += (Get-Item -LiteralPath $p).FullName }
-}
-
-if ($foundCmd.Count -eq 0) {
-    if (Get-Command logging -ErrorAction SilentlyContinue) {
-        logging "No VS Code CLI executable found" "DEBUG"
-    }
-    return
-}
-
-if ($foundCmd.Count -gt 1) {
-    if (Get-Command logging -ErrorAction SilentlyContinue) {
-        logging "Multiple VS Code CLI executables found - using first: $($foundCmd[0])" "WARN"
+    # Execute version command if provided
+    if ($VersionCommand) {
+        try {
+            & $VersionCommand
+            $path = & $VersionPath
+            if (Get-Command logging -ErrorAction SilentlyContinue) {
+                logging "$VersionLabel applied with path: $path" "DEBUG"
+            }
+        } catch {
+            $path = & $VersionPath
+            if (Get-Command logging -ErrorAction SilentlyContinue) {
+                logging "$VersionLabel failed with path: $path" "WARN"
+            }
+        }
     }
 }
 
-$env:CODE_CMD_EXE = $foundCmd[0]
+# Find VS Code
+Find-CodeExecutable -Name "VS Code" -EnvVarName "CODE_EXE" `
+    -CandidatePaths @(
+        (Join-Path $env:PROGRAMFILES "Microsoft VS Code/Code.exe"),
+        (Join-Path $env:LOCALAPPDATA "Programs\Microsoft VS Code/Code.exe")
+    )
 
-try{
-    & $env:CODE_CMD_EXE version use stable --install-dir (Split-Path -Parent $env:CODE_EXE) 1>$null 2>$null
-    logging "Vscode CLI applied with path: $(Split-Path -Parent $env:CODE_INSIDERS_EXE)" "DEBUG"
-} catch {
-    logging "Vscode CLI failed with path: $(Split-Path -Parent $env:CODE_INSIDERS_EXE)" "WARN"
-}
+# Find VS Code Insiders
+Find-CodeExecutable -Name "VS Code Insiders" -EnvVarName "CODE_INSIDERS_EXE" `
+    -CandidatePaths @(
+        (Join-Path $env:PROGRAMFILES "Microsoft VS Code Insiders/Code - Insiders.exe"),
+        (Join-Path $env:LOCALAPPDATA "Programs\Microsoft VS Code Insiders/Code - Insiders.exe")
+    )
 
-# VS Code Insiders CLI
-$candidatePathsCmdInsiders = @(
-    (Join-Path $env:PROGRAMFILES "WinGet/Links/code-insiders.exe"),
-    (Join-Path $env:LOCALAPPDATA "Microsoft/WinGet/Links/code-insiders.exe")
-)
+# Find VS Code CLI
+Find-CodeExecutable -Name "VS Code CLI" -EnvVarName "CODE_CMD_EXE" `
+    -CandidatePaths @(
+        (Join-Path $env:PROGRAMFILES "WinGet/Links/code.exe"),
+        (Join-Path $env:LOCALAPPDATA "Microsoft/WinGet/Links/code.exe")
+    ) `
+    -VersionCommand {
+        & $env:CODE_CMD_EXE version use stable --install-dir (Split-Path -Parent $env:CODE_EXE) 1>$null 2>$null
+    } `
+    -VersionLabel "Vscode CLI" `
+    -VersionPath { Split-Path -Parent $env:CODE_INSIDERS_EXE }
 
-$foundInsidersCmd = @()
-foreach ($p in $candidatePathsCmdInsiders) {
-    if (Test-Path $p) { $foundInsidersCmd += (Get-Item -LiteralPath $p).FullName }
-}
-
-if ($foundInsidersCmd.Count -eq 0) {
-    if (Get-Command logging -ErrorAction SilentlyContinue) {
-        logging "No VS Code Insiders CLI executable found" "DEBUG"
-    }
-    return
-}
-
-if ($foundInsidersCmd.Count -gt 1) {
-    if (Get-Command logging -ErrorAction SilentlyContinue) {
-        logging "Multiple VS Code Insiders CLI executables found - using first: $($foundCmd[0])" "WARN"
-    }
-}
-
-$env:CODE_INSIDERS_CMD_EXE = $foundInsidersCmd[0]
-
-try{ 
-    & $env:CODE_INSIDERS_CMD_EXE version use insider --install-dir (Split-Path -Parent $env:CODE_INSIDERS_EXE) 1>$null 2>$null
-    logging "Vscode Insiders CLI applied with path: $(Split-Path -Parent $env:CODE_INSIDERS_EXE)" "DEBUG"
-} catch {
-    logging "Vscode Insiders CLI failed with path: $(Split-Path -Parent $env:CODE_INSIDERS_EXE)" "WARN"
-}
+# Find VS Code Insiders CLI
+Find-CodeExecutable -Name "VS Code Insiders CLI" -EnvVarName "CODE_INSIDERS_CMD_EXE" `
+    -CandidatePaths @(
+        (Join-Path $env:PROGRAMFILES "WinGet/Links/code-insiders.exe"),
+        (Join-Path $env:LOCALAPPDATA "Microsoft/WinGet/Links/code-insiders.exe")
+    ) `
+    -VersionCommand {
+        & $env:CODE_INSIDERS_CMD_EXE version use insider --install-dir (Split-Path -Parent $env:CODE_INSIDERS_EXE) 1>$null 2>$null
+    } `
+    -VersionLabel "Vscode Insiders CLI" `
+    -VersionPath { Split-Path -Parent $env:CODE_INSIDERS_EXE }
 
 # Load shell integration if running in VS Code
 if ($env:TERM_PROGRAM -eq "vscode") {
