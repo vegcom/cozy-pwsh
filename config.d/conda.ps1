@@ -1,11 +1,19 @@
 # Conda initialize (Windows)
 
-$candidates = @(
+$ExecCandidates = @(
     'C:\opt\miniforge3\Scripts\conda.exe'
     (Join-Path $HOME 'miniforge3\Scripts\conda.exe')
 )
 
-$exe = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+$exe = $ExecCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+$BatCandidates = @(
+    'C:\opt\miniforge3\Scripts\conda.bat'
+    (Join-Path $HOME 'miniforge3\Scripts\conda.bat')
+)
+
+$bat = $BatCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+
 
 if (-not $exe) {
     logging "No conda executable found" "WARN"
@@ -19,8 +27,11 @@ logging "Using conda executable: $exe" "DEBUG"
 $hookScript = Join-Path (Split-Path $exe -Parent) "..\shell\condabin\conda-hook.ps1"
 
 if (Test-Path $hookScript) {
-    & $hookScript
+    . $hookScript
     logging "Loaded conda-hook.ps1 (Windows legacy activation)" "DEBUG"
+
+    conda activate base
+    logging "Activated conda base environment" "DEBUG"
 } else {
     logging "conda-hook.ps1 not found at $hookScript" "ERROR"
 }
