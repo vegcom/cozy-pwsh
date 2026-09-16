@@ -5,7 +5,6 @@
 try {
     # Candidate npm executables (from NVM nodejs installation)
     $candidatePaths = @(
-        (Join-Path $env:NVM_SYMLINK 'npm.cmd'),
         (Join-Path $env:NVM_HOME 'nodejs' 'npm.cmd'),
         'C:\opt\nvm\nodejs\npm.cmd'
     )
