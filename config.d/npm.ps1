@@ -5,7 +5,9 @@
 try {
     # Candidate npm executables (from NVM nodejs installation)
     $candidatePaths = @(
+        (Join-Path $env:NVM_HOME '.nodejs' 'npm.exe'),
         (Join-Path $env:NVM_HOME 'nodejs' 'npm.cmd'),
+        'C:\opt\nvm\.nodejs\npm.exe',
         'C:\opt\nvm\nodejs\npm.cmd'
     )
 
@@ -32,16 +34,25 @@ try {
     if (Get-Command logging -ErrorAction SilentlyContinue) {
         logging "npm found at: $env:NPM_EXE" "DEBUG"
     }
+    
+    if ($env:NPM_EXE) {
+        $npmPrefix = (& $env:NPM_EXE config get prefix).Trim()
+        if ($npmPrefix -and (Test-Path $npmPrefix)) {
+            
+            # Split the Path by semicolons and check for an exact match
+            $currentPaths = $env:Path -split ';'
+            if ($npmPrefix -notin $currentPaths) {
+                $env:Path = "$npmPrefix;$env:Path"
+                
+                if (Get-Command logging -ErrorAction SilentlyContinue) {
+                    logging "npm path appended $npmPrefix" "DEBUG"
+                }
+            }
+        }
+    }
+
 } catch {
     if (Get-Command logging -ErrorAction SilentlyContinue) {
         logging "Failed to initialize npm: $_" "WARN"
     }
 }
-
-# TODO: Add npm-specific logic here
-# Examples:
-# - Set npm registry configuration
-# - Initialize npm authentication
-# - Configure npm cache location
-# - Set npm global prefix
-# - Any other npm environment setup
