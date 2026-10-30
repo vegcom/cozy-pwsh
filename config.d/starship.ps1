@@ -1,19 +1,11 @@
-# Check if starship is installed, install with winget if missing
-if (-not (Get-Command starship -ErrorAction SilentlyContinue)) {
-    logging "starship not found, installing with winget..." "INFO"
-    try {
-        # TODO: may swap to try choco THEN try winget
-        winget install starship --silent --accept-source-agreements --accept-package-agreements | Out-Null
-        # Refresh PATH
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-        logging "starship installed successfully" "INFO"
-    } catch {
-        logging "failed to install starship: $_" "ERROR"
-        return
-    }
-}
-
 # Initialize starship prompt
+
+# expects starship:
+#
+# ```pwsh
+# winget install starship --silent --accept-source-agreements --accept-package-agreements
+# ```
+
 try {
     Invoke-Expression (&starship init powershell)
 } catch {
