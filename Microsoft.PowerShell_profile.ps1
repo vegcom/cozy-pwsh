@@ -18,7 +18,7 @@ $inshellisense = Join-Path (Split-Path -Parent $PROFILE.AllUsersCurrentHost) '.i
 $starship = Join-Path (Split-Path -Parent $PROFILE.AllUsersCurrentHost) 'config.d' 'starship.ps1'
 
 # 🛠️ environment defaults:
-$env:PWSH_LOG_LEVEL = "INFO"
+$env:PWSH_LOG_LEVEL = "ERROR"
 $env:PWSH_TIMESTAMPS = $true
 $env:PWSH_GLYPH = $true
 $env:ENABLE_MODULES = $true
