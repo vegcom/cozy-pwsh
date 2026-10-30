@@ -7,14 +7,6 @@ $ExecCandidates = @(
 
 $exe = $ExecCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 
-$BatCandidates = @(
-    'C:\opt\miniforge3\Scripts\conda.bat'
-    (Join-Path $HOME 'miniforge3\Scripts\conda.bat')
-)
-
-$bat = $BatCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-
-
 if (-not $exe) {
     logging "No conda executable found" "WARN"
     return
@@ -23,7 +15,6 @@ if (-not $exe) {
 $env:CONDA_EXE = $exe
 logging "Using conda executable: $exe" "DEBUG"
 
-# TODO: Windows uses the legacy hook on 2026-03-06
 $hookScript = Join-Path (Split-Path $exe -Parent) "..\shell\condabin\conda-hook.ps1"
 
 if (Test-Path $hookScript) {
@@ -35,3 +26,17 @@ if (Test-Path $hookScript) {
 } else {
     logging "conda-hook.ps1 not found at $hookScript" "ERROR"
 }
+
+$parentDir = Split-Path -Path $exe -Parent
+$baseDir   = Split-Path -Path $parentDir -Parent
+
+$condaPaths = @(
+    $parentDir,
+    "$baseDir\Scripts",
+    "$baseDir\Library\bin",
+    "$baseDir\Library\usr\bin",
+    "$baseDir\Library\mingw-w64\bin"
+) -join ';'
+
+$env:_CONDA_PATHS = $condaPaths
+$env:PATH = "$condaPaths;$env:PATH"
